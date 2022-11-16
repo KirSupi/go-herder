@@ -3,13 +3,13 @@ package herder
 import (
 	"errors"
 	"go-herder/internal/repository"
+	"log"
 	"os/exec"
 	"strings"
 	"sync"
 )
 
 type Config struct {
-	Command string `yaml:"command"`
 }
 
 type Herder struct {
@@ -36,9 +36,10 @@ func (h *Herder) Init() error {
 	}
 	for pd := range h.r.IterProcesses() {
 		h.Processes = append(h.Processes, &Process{
-			ID:     pd.ID,
-			Label:  pd.Label,
-			Params: pd.Params,
+			ID:      pd.ID,
+			Label:   pd.Label,
+			Command: pd.Command,
+			Params:  pd.Params,
 		})
 	}
 	return nil
@@ -57,7 +58,7 @@ func (h *Herder) RunAll() error {
 	h.m.Lock()
 	defer h.m.Unlock()
 	for _, p := range h.Processes {
-		cmdArgs := strings.Split(h.c.Command, " ")
+		cmdArgs := strings.Split(p.Command, " ")
 		if len(cmdArgs) == 0 {
 			return errors.New("empty command")
 		}
@@ -69,6 +70,7 @@ func (h *Herder) RunAll() error {
 		for _, s := range strings.Split(p.Params, " ") {
 			args = append(args, s)
 		}
+		log.Println("CMD:", cmd)
 		p.Cmd = exec.Command(cmd, args...)
 		go func(p *Process) {
 			_ = p.run()

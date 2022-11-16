@@ -1,18 +1,22 @@
 package repository
 
 import (
+	"errors"
+	"github.com/google/uuid"
 	"go-herder/internal/models"
 	"log"
+	"time"
 )
 
 type ProcessData struct {
-	ID     int
-	Label  *string
-	Params string
+	ID      int
+	Label   *string
+	Command string
+	Params  string
 }
 
 func (r *Repository) IterProcesses() chan ProcessData {
-	rows, err := r.db.Query("SELECT id, label, params FROM processes")
+	rows, err := r.db.Query("SELECT id, label, command, params FROM processes")
 	if err != nil {
 		return nil
 	}
@@ -20,7 +24,7 @@ func (r *Repository) IterProcesses() chan ProcessData {
 	go func() {
 		for rows.Next() {
 			var pd ProcessData
-			err = rows.Scan(&pd.ID, &pd.Label, &pd.Params)
+			err = rows.Scan(&pd.ID, &pd.Label, &pd.Command, &pd.Params)
 			if err != nil {
 				log.Println("error on IterProcesses():", err.Error())
 				break
@@ -33,7 +37,23 @@ func (r *Repository) IterProcesses() chan ProcessData {
 }
 
 func (r *Repository) CreateSession(ip, userAgent string) (s *models.Session, err error) {
-	sessionID := uuid
+	s = &models.Session{
+		ID:        uuid.New().String(),
+		IP:        ip,
+		UserAgent: userAgent,
+		CreatedAt: time.Now().Unix(),
+	}
+	res, err := r.db.Exec("INSERT INTO sessions(id,ip,user_agent) VALUES (?,?,?,?)", s.ID, s.IP, s.UserAgent, s.CreatedAt)
+	if err != nil {
+		return
+	}
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return
+	}
+	if rowsAffected != 1 {
+		return s, errors.New("unexpected error when recording a session in the database")
+	}
 	return
 }
 func (r *Repository) GetSession(sessionID string) (s *models.Session, err error) {
@@ -45,7 +65,17 @@ func (r *Repository) GetSession(sessionID string) (s *models.Session, err error)
 	err = row.Scan(&s.ID, &s.IP, &s.UserAgent, &s.CreatedAt)
 	return
 }
-func (r *Repository) DeleteSession(sessionID string) error {
-	_, err := r.db.Exec(`UPDATE sessions SET deleted_at=CURRENT_TIMESTAMP WHERE id=?`, sessionID)
-	return err
+func (r *Repository) DeleteSession(sessionID string) (err error) {
+	res, err := r.db.Exec(`UPDATE sessions SET deleted_at=CURRENT_TIMESTAMP WHERE id=?`, sessionID)
+	if err != nil {
+		return
+	}
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return
+	}
+	if rowsAffected != 1 {
+		return errors.New("unexpected error when recording a session in the database")
+	}
+	return nil
 }

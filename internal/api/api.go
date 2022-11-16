@@ -129,7 +129,7 @@ func (api *API) authPost(c *gin.Context) {
 		}
 	}
 
-	sessionID, err = api.r.CreateSession(c.RemoteIP(), c.Request.UserAgent())
+	session, err := api.r.CreateSession(c.RemoteIP(), c.Request.UserAgent())
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, Error(&Err{Code: http.StatusInternalServerError, Message: err.Error()}))
 		return

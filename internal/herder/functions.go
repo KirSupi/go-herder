@@ -20,19 +20,19 @@ func StringifyStates(states []ProcessState) string {
 	var b bytes.Buffer
 	w := tabwriter.NewWriter(&b, 0, 0, 1, ' ', tabwriter.Debug)
 	if needToPrintLabel {
-		_, _ = fmt.Fprint(w, "ID\tLabel\tActive")
+		_, _ = fmt.Fprint(w, "ID\tLabel\tActive\tOutput")
 	} else {
-		_, _ = fmt.Fprint(w, "ID\tActive")
+		_, _ = fmt.Fprint(w, "ID\tActive\tOutput")
 	}
 	for _, s := range states {
 		if needToPrintLabel {
 			if s.Label != nil {
-				_, _ = fmt.Fprintf(w, "\n%d\t%s\t%v", s.ID, *s.Label, s.Active)
+				_, _ = fmt.Fprintf(w, "\n%d\t%s\t%v\t%v", s.ID, *s.Label, s.Active, s.Output)
 			} else {
-				_, _ = fmt.Fprintf(w, "\n%d\t\t%v", s.ID, s.Active)
+				_, _ = fmt.Fprintf(w, "\n%d\t\t%v\t%v", s.ID, s.Active, s.Output)
 			}
 		} else {
-			_, _ = fmt.Fprintf(w, "\n%d\t%v", s.ID, s.Active)
+			_, _ = fmt.Fprintf(w, "\n%d\t%v\t%v", s.ID, s.Active, s.Output)
 		}
 	}
 	_ = w.Flush()

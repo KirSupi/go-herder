@@ -4,5 +4,5 @@ type Session struct {
 	ID        string
 	UserAgent string
 	IP        string
-	CreatedAt int // unix timestamp
+	CreatedAt int64 // unix timestamp
 }

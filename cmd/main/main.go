@@ -29,9 +29,9 @@ func main() {
 	if err = hrdr.Init(); err != nil {
 		log.Fatalln("error on init Herder:", err.Error())
 	}
-	//if err = hrdr.RunAll(); err != nil {
-	//	log.Fatalln("error on run Herder:", err.Error())
-	//}
+	if err = hrdr.RunAll(); err != nil {
+		log.Fatalln("error on run Herder:", err.Error())
+	}
 	api := apiPkg.New(cfg.APIConfig, hrdr, repo)
 	if err = api.Run(); err != nil {
 		log.Println("go-herder die with error:", err.Error())
