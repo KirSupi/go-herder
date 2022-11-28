@@ -1,8 +1,0 @@
-db:
-  file: database.db
-
-api:
-  addr: :3001
-
-herder:
-  command: python script.py

@@ -14,10 +14,15 @@ File `.yml` contains go-herder configurations, and a file `.db` contains the par
 To create these files, use the `go-herder init` command.
 
 ### Configure
-#### .yml file
-
-#### .db file
 
 ### Running
 
 ### API
+#### /herder
+    /run
+    /state
+    /kill
+#### /herder/processes/:id
+    /run
+    /state
+    /kill

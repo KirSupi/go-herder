@@ -1,22 +1,21 @@
 package herder
 
 import (
-	"bufio"
+	"bytes"
 	"errors"
-	"io"
 	"log"
-	"os"
 	"os/exec"
+	"strings"
 )
 
 type Process struct {
-	ID         int
-	Label      *string
-	Command    string
-	Params     string
-	Active     bool
-	Cmd        *exec.Cmd
-	outputPipe io.ReadCloser
+	ID           int
+	Label        *string
+	Command      string
+	Params       string
+	Active       bool
+	Cmd          *exec.Cmd
+	OutputBuffer *bytes.Buffer
 }
 
 type ProcessState struct {
@@ -27,67 +26,55 @@ type ProcessState struct {
 }
 
 func (p *Process) getState() ProcessState {
-	scanner := bufio.NewScanner(p.outputPipe)
-	if scanner.Err() != nil {
-		log.Println(p.ID, "scanner.Err():", scanner.Err())
-	}
-	for scanner.Scan() {
-		log.Println(p.ID, "buf:", scanner.Bytes(), string(scanner.Bytes()))
-	}
 	return ProcessState{
 		ID:     p.ID,
 		Label:  p.Label,
 		Active: p.Active,
-		Output: scanner.Bytes(),
+		Output: p.OutputBuffer.Bytes(),
 	}
 }
 func (p *Process) run() error {
-	log.Println(p.ID, *p.Label, p.Params, p.Cmd.Path)
-	if p.Cmd == nil {
-		return nil
+	cmdArgs := strings.Split(p.Command, " ")
+	if len(cmdArgs) == 0 {
+		return errors.New("empty command")
 	}
-	if p.Cmd.Process != nil || p.Active {
+	cmd := cmdArgs[0]
+	args := make([]string, 0, len(cmdArgs)-1)
+	for _, s := range cmdArgs[1:] {
+		args = append(args, s)
+	}
+	for _, s := range strings.Split(p.Params, " ") {
+		args = append(args, s)
+	}
+	log.Println("CMD:", cmd)
+	p.Cmd = exec.Command(cmd, args...)
+
+	log.Println("run", p.ID, p.Params, p.Cmd.Path)
+	if p.Active || p.Cmd != nil || p.Cmd.Process != nil {
 		return errors.New("process already running")
 	}
 	p.Active = true
-	pr, pw := io.Pipe()
-	p.Cmd.Stdout = pw
+	p.OutputBuffer = bytes.NewBuffer(nil)
+
+	p.Cmd.Stdout = p.OutputBuffer
+	p.Cmd.Stderr = p.OutputBuffer
 	go func() {
-		go func() {
-			if _, err := io.Copy(os.Stdout, pr); err != nil {
-				log.Fatal(err)
-			}
-			err := pr.Close()
-			if err != nil {
-				log.Println("PipeWriter Error:", err.Error())
-			}
-		}()
 		if err := p.Cmd.Run(); err != nil {
 			log.Printf("process #%d ends with error: %s\n", p.ID, err.Error())
 		} else {
 			log.Printf("process #%d ends\n", p.ID)
 		}
-		//if output, err := p.Cmd.CombinedOutput(); err != nil {
-		//	log.Printf("process #%d output: %s\n", p.ID, string(output))
-		//	log.Printf("process #%d ends with error: %s\n", p.ID, err.Error())
-		//} else {
-		//	log.Printf("process #%d output: %s\n", p.ID, string(output))
-		//	log.Printf("process #%d ends\n", p.ID)
-		//}
 		p.Active = false
-
-		err := pw.Close()
-		if err != nil {
-			log.Println("PipeWriter Error:", err.Error())
-		}
 	}()
 	return nil
 }
-
 func (p *Process) kill() error {
+	p.Active = false
 	if p.Cmd != nil {
 		if p.Cmd.Process != nil {
-			return p.Cmd.Process.Kill()
+			err := p.Cmd.Process.Kill()
+			p.Cmd = nil
+			return err
 		}
 	}
 	return nil

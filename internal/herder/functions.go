@@ -27,12 +27,12 @@ func StringifyStates(states []ProcessState) string {
 	for _, s := range states {
 		if needToPrintLabel {
 			if s.Label != nil {
-				_, _ = fmt.Fprintf(w, "\n%d\t%s\t%v\t%v", s.ID, *s.Label, s.Active, s.Output)
+				_, _ = fmt.Fprintf(w, "\n%d\t%s\t%v\t%v", s.ID, *s.Label, s.Active, string(s.Output))
 			} else {
-				_, _ = fmt.Fprintf(w, "\n%d\t\t%v\t%v", s.ID, s.Active, s.Output)
+				_, _ = fmt.Fprintf(w, "\n%d\t\t%v\t%v", s.ID, s.Active, string(s.Output))
 			}
 		} else {
-			_, _ = fmt.Fprintf(w, "\n%d\t%v\t%v", s.ID, s.Active, s.Output)
+			_, _ = fmt.Fprintf(w, "\n%d\t%v\t%v", s.ID, s.Active, string(s.Output))
 		}
 	}
 	_ = w.Flush()
