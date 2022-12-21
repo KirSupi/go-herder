@@ -1,4 +1,4 @@
-package repository
+package herder
 
 import (
 	"gopkg.in/yaml.v2"
