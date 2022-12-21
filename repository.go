@@ -1,4 +1,4 @@
-package repository
+package herder
 
 import (
 	_ "github.com/mattn/go-sqlite3"
