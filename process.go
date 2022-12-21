@@ -1,4 +1,4 @@
-package herder
+package repository
 
 import (
 	"bytes"

@@ -1,24 +1,23 @@
-package api
+package repository
 
 import (
 	"errors"
 	"github.com/gin-gonic/gin"
-	"go-herder/internal/herder"
 	"net/http"
 	"strconv"
 )
 
-type Config struct {
+type APIConfig struct {
 	Addr string `yaml:"addr"`
 }
 
 type API struct {
-	c *Config
-	h *herder.Herder
+	c *APIConfig
+	h *Herder
 	e *gin.Engine
 }
 
-func New(c Config, h *herder.Herder) *API {
+func NewAPI(c APIConfig, h *Herder) *API {
 	var api = &API{
 		c: &c,
 		h: h,
@@ -103,7 +102,7 @@ func (api *API) herderState(c *gin.Context) {
 		if err != nil {
 			c.String(http.StatusInternalServerError, "internal server error")
 		} else {
-			c.String(http.StatusOK, herder.StringifyStates(states))
+			c.String(http.StatusOK, StringifyStates(states))
 		}
 	}
 }
@@ -138,7 +137,7 @@ func (api *API) processState(c *gin.Context) {
 		if err != nil {
 			c.String(http.StatusInternalServerError, "internal server error")
 		} else {
-			c.String(http.StatusOK, herder.StringifyStates([]herder.ProcessState{state}))
+			c.String(http.StatusOK, StringifyStates([]ProcessState{state}))
 		}
 	}
 }

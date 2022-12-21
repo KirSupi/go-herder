@@ -1,21 +1,19 @@
-package config
+package repository
 
 import (
-	"go-herder/internal/api"
-	"go-herder/internal/herder"
 	"gopkg.in/yaml.v2"
 	"io"
 	"os"
 )
 
 type Config struct {
-	HerderConfig herder.Config `yaml:"herder"`
-	APIConfig    api.Config    `yaml:"api"`
+	HerderConfig HerderConfig `yaml:"herder"`
+	APIConfig    APIConfig    `yaml:"api"`
 }
 
-func New(configFile string) (*Config, error) {
+func NewConfigFromFile(configFilePath string) (*Config, error) {
 	cfg := &Config{}
-	file, err := os.Open(configFile)
+	file, err := os.Open(configFilePath)
 	if err != nil {
 		return cfg, err
 	}
