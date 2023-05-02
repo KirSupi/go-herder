@@ -6,12 +6,18 @@ import (
 )
 
 type TasksQueue struct {
-	len   int
-	first *tasksQueueItem
-	last  *tasksQueueItem
-	ch    chan *task
+	len          int
+	first        *tasksQueueItem
+	last         *tasksQueueItem
+	ch           chan *task
 	nowInChannel *task
-	m     sync.Mutex
+	m            sync.Mutex
+}
+
+func newTasksQueue() TasksQueue {
+	return TasksQueue{
+		ch: make(chan *task),
+	}
 }
 
 type tasksQueueItem struct {
@@ -93,6 +99,7 @@ func (q *TasksQueue) run() {
 	for t := q.pop(); t != nil; t = q.pop() {
 		q.nowInChannel = t
 		q.ch <- t
+		q.nowInChannel = nil
 	}
 }
 

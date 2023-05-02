@@ -30,27 +30,14 @@ func (b *OutputBuffer) Write(p []byte) (n int, err error) {
 		b.buffer = append(b.buffer, p...)
 		n = len(p)
 	} else {
-		n = b.maxLen
 		if len(p) >= b.maxLen {
-			if len(b.buffer) == b.maxLen {
-				for i, j := 0, len(p)-b.maxLen; i < b.maxLen; i++ {
-					b.buffer[i] = p[j]
-					j++
-				}
-			} else {
-				b.buffer = make([]byte, 0, b.maxLen)
-				copy(p[len(p)-b.maxLen:], b.buffer)
-			}
+			n = b.maxLen
+			b.buffer = make([]byte, 0, b.maxLen)
+			copy(p[len(p)-b.maxLen:], b.buffer)
 		} else {
-			if len(b.buffer) != b.maxLen {
-				b.buffer = make([]byte, b.maxLen, b.maxLen)
-			}
-			for i := len(b.buffer) + len(p) - b.maxLen; i < len(b.buffer); i++ {
-				b.buffer[i] = p[i]
-			}
-			for i, j := len(p), 0; j < len(p); j++ {
-				b.buffer[i] = p[j]
-			}
+			b.buffer = append(make([]byte, 0, b.maxLen), b.buffer[len(p):]...)
+			b.buffer = append(b.buffer, p...)
+			n = len(p)
 		}
 	}
 	return

@@ -1,39 +1,35 @@
 package herder
 
 import (
-	"errors"
 	"fmt"
 	"sync"
 	"time"
 )
 
 type Herder struct {
-	queue           TasksQueue
-	finished        tasks
-	active          tasks
-	lastTaskId      int
-	maxWorkersCount int
-	workers         chan int
-	m               sync.Mutex
-	logger          *Logger
+	queue               TasksQueue
+	finished            tasks
+	active              tasks
+	lastTaskId          int
+	maxWorkersCount     int
+	m                   sync.Mutex
+	logger              Logger
 	defaultMaxStdoutLen int
 	defaultMaxStderrLen int
 }
 
 type Config struct {
-	MaxWorkersCount int `json:"max_workers_count,omitempty"`
-	Logger          *Logger
+	MaxWorkersCount     int `json:"max_workers_count,omitempty"`
+	Logger              Logger
 	DefaultMaxStdoutLen int `json:"default_max_stdout_len"`
 	DefaultMaxStderrLen int `json:"default_max_stderr_len"`
 }
 
 func New(c Config) *Herder {
 	return &Herder{
-		queue: TasksQueue{
-			ch: make(chan *task),
-		},
-		maxWorkersCount: c.MaxWorkersCount,
-		logger:          c.Logger,
+		queue:               newTasksQueue(),
+		maxWorkersCount:     c.MaxWorkersCount,
+		logger:              c.Logger,
 		defaultMaxStdoutLen: c.DefaultMaxStdoutLen,
 		defaultMaxStderrLen: c.DefaultMaxStderrLen,
 	}
@@ -50,9 +46,9 @@ func (h *Herder) AddToQueue(tc TaskConfig) (taskId int) {
 		*tc.MaxStderrLen = h.defaultMaxStderrLen
 	}
 	t := &task{
-		id:      h.lastTaskId,
-		command: tc.Command,
-		args:    tc.Args,
+		id:           h.lastTaskId,
+		command:      tc.Command,
+		args:         tc.Args,
 		maxStdoutLen: *tc.MaxStdoutLen,
 		maxStderrLen: *tc.MaxStderrLen,
 	}
@@ -68,15 +64,9 @@ func (h *Herder) ClearQueue() {
 
 func (h *Herder) Run() {
 	if h.maxWorkersCount > 0 {
-		h.workers = make(chan int, h.maxWorkersCount)
 		for i := 1; i <= h.maxWorkersCount; i++ {
 			go h.worker(i, nil)
 		}
-		for i := 1; i <= h.maxWorkersCount; i++ {
-			<-h.workers
-		}
-		close(h.workers)
-		h.workers = nil
 	} else {
 		var i int
 		for t := range h.queue.ch {
@@ -88,9 +78,9 @@ func (h *Herder) Run() {
 
 func (h *Herder) log(v ...any) {
 	if h.logger != nil {
-		ts := time.Now().Format(time.DateTime)
+		ts := time.Now().Format(time.RFC3339)
 		v = append([]any{ts}, v...)
-		(*h.logger).Println(v...)
+		h.logger.Println(v...)
 	}
 }
 
@@ -122,11 +112,9 @@ func (h *Herder) Kill(taskId int) error {
 		if h.active.slice[i].id != taskId {
 			continue
 		}
-		if h.active.slice[i].p != nil {
-			return h.active.slice[i].p.kill()
-		}
+		return h.active.slice[i].killProcess()
 	}
-	return errors.New("not found")
+	return nil
 }
 
 func (h *Herder) GetAllStates() []TaskState {
