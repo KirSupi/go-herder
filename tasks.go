@@ -112,7 +112,8 @@ func (t *task) getState() TaskState {
 		*finishedAt = *t.finishedAt
 	}
 	var args []string
-	if len(t.args) != 0 {
+	if t.args != nil {
+		args = make([]string, len(t.args), len(t.args))
 		copy(args, t.args)
 	}
 	var exitCode *int
