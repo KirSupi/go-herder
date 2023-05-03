@@ -4,12 +4,27 @@ import (
 	"sync"
 	"time"
 )
+
 type TaskConfig struct {
-	Command string `json:"command"`
-	Args []string `json:"args,omitempty"`
-	MaxStdoutLen *int `json:"max_stdout_len,omitempty"`
-	MaxStderrLen *int `json:"max_stderr_len,omitempty"`
+	Command      string   `json:"command"`
+	Args         []string `json:"args,omitempty"`
+	MaxStdoutLen *int     `json:"max_stdout_len,omitempty"`
+	MaxStderrLen *int     `json:"max_stderr_len,omitempty"`
 }
+
+func DefaultPythonScriptTask(scriptPath string, args ...string) TaskConfig {
+	taskArgs := make([]string, 1, len(args)+2)
+	taskArgs[0] = "-u"
+	taskArgs[1] = scriptPath
+	taskArgs = append(taskArgs, args...)
+	return TaskConfig{
+		Command:      "python",
+		Args:         taskArgs,
+		MaxStdoutLen: nil,
+		MaxStderrLen: nil,
+	}
+}
+
 type tasks struct {
 	slice  []*task
 	maxLen int
